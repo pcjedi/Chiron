@@ -24,7 +24,6 @@ def _bytes_feature(value):
 
 
 def extract(raw_folder=None):
-    count = 1
     root_folder = FLAGS.input + os.path.sep
     output_folder = FLAGS.output + os.path.sep
     if not os.path.isdir(root_folder):
@@ -38,20 +37,23 @@ def extract(raw_folder=None):
 
     writer = tf.python_io.TFRecordWriter(tfrecords_filename)
 
+    n_all = 0
+    n_success = 0
     for file_n in tf.gfile.ListDirectory(root_folder):
         if file_n.endswith('fast5'):
-#            output_file = output_folder + os.path.splitext(file_n)[0]
+            n_all += 1
+            #output_file = output_folder + os.path.splitext(file_n)[0]
             success, (raw_data, raw_data_array) = extract_file(
                 root_folder + os.path.sep + file_n)
             if success:
-                count += 1
+                n_success += 1
                 example = tf.train.Example(features=tf.train.Features(feature={
                     'raw_data': _bytes_feature(raw_data.tostring()),
                     'features': _bytes_feature(raw_data_array.tostring()),
                     'fname':_bytes_feature(str.encode(file_n))}))
                 writer.write(example.SerializeToString())
-            sys.stdout.write("%s file transfered.   \n" % (file_n))
-
+                print ("%s file transfered." % (file_n))
+    print ('Extraction finnished: {} of {} Files succeeded'.format(n_success, n_all))
     writer.close()
 
 
@@ -60,9 +62,8 @@ def extract_file(input_file):
     	(raw_data, raw_label, raw_start, raw_length) = labelop.get_label_raw(
             input_file, FLAGS.basecall_group,
             FLAGS.basecall_subgroup)
-    except IOError:
-        return False, (None, None)
-    except:
+    except IOError as e:
+        print (e, input_file)
         return False, (None, None)
 
     raw_data_array = []

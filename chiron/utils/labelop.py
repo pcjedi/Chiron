@@ -127,10 +127,10 @@ def get_label_segment(fast5_fn, basecall_group, basecall_subgroup):
     #    print segment_index
     #    print corr_index
     segment_data = segment_data[first_segment_index:segment_index]
-    return (segment_data, first_segment_index, segment_index, total)
+    return segment_data, first_segment_index, segment_index, total
 
 
-def get_label_raw(fast5_fn, basecall_group, basecall_subgroup,reverse = False):
+def get_label_raw(fast5_fn, basecall_group, basecall_subgroup, reverse=False):
     ##Open file
     try:
         fast5_data = h5py.File(fast5_fn, 'r')
@@ -143,18 +143,18 @@ def get_label_raw(fast5_fn, basecall_group, basecall_subgroup,reverse = False):
         # raw_attrs = raw_dat.attrs
         raw_dat = raw_dat['Signal'].value
     except:
-        raise RuntimeError(
+        raise IOError(
             'Raw data is not stored in Raw/Reads/Read_[read#] so ' +
             'new segments cannot be identified.')
 
     # Read corrected data
     try:
         corr_data = fast5_data[
-            '/Analyses/'+basecall_group +'/' + basecall_subgroup + '/Events']
+            '/Analyses/' + basecall_group + '/' + basecall_subgroup + '/Events']
         corr_attrs = dict(list(corr_data.attrs.items()))
         corr_data = corr_data.value
     except:
-        raise RuntimeError((
+        raise IOError((
             'Corrected data not found.'))
 
     fast5_info = fast5_data['UniqueGlobalKey/channel_id'].attrs

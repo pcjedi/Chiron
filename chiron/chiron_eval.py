@@ -209,7 +209,7 @@ def evaluation():
     logits_queue = tf.FIFOQueue(
         capacity=1000,
         dtypes=[tf.float32, tf.string, tf.int32, tf.int32],
-        shapes=[logits.shape,logits_fname.shape,logits_index.shape, seq_length.shape]
+        shapes=[logits.shape, logits_fname.shape, logits_index.shape, seq_length.shape]
     )
     logits_queue_size = logits_queue.size()
     logits_enqueue = logits_queue.enqueue((logits, logits_fname, logits_index, seq_length))
@@ -258,7 +258,7 @@ def evaluation():
                         logits_index:i,
                         logits_fname: name,
                     }
-                    sess.run(logits_enqueue,feed_dict=feed_dict)
+                    sess.run(logits_enqueue, feed_dict=feed_dict)
             sess.run(logits_queue_close)
         def run_listener(write_lock):
             # This function is used to solve the error when tqdm is used inside thread

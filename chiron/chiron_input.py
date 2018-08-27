@@ -535,7 +535,7 @@ def read_label_tfrecord(raw_label_array, skip_start=10, window_n=0):
         skip_start = window_n
     for line in raw_label_array:
         if isinstance(line[2],bytes):
-            c_base = line[2].decode()[2]
+            c_base = line[2].decode()
         else:
             c_base = line[2]
         all_base.append(base2ind(c_base))

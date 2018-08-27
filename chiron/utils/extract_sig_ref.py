@@ -1,18 +1,18 @@
 # Copyright 2017 The Chiron Authors. All Rights Reserved.
 #
-#This Source Code Form is subject to the terms of the Mozilla Public
-#License, v. 2.0. If a copy of the MPL was not distributed with this
-#file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-#Created on Thu May  4 10:57:35 2017
+# Created on Thu May  4 10:57:35 2017
+
+import sys
 
 import argparse
-import os
-import sys
 import h5py
-import logging
-import threading
+import os
 from tqdm import tqdm
+
 
 def extract(FLAGS):
     # logger = logging.getLogger(__name__)
@@ -38,18 +38,18 @@ def extract(FLAGS):
         dir_list = os.walk(root_folder)
     else:
         dir_list = [root_folder]
-    for dir_tuple in tqdm(dir_list,desc = "Subdirectory processing:",position = 0):
+    for dir_tuple in tqdm(dir_list, desc="Subdirectory processing:", position=0):
         if FLAGS.recursive:
             directory = dir_tuple[0]
             file_list = dir_tuple[2]
         else:
             file_list = os.listdir(dir_tuple)
-        for file_n in tqdm(file_list,desc = "Signal processing:",position = 1):
+        for file_n in tqdm(file_list, desc="Signal processing:", position=1):
             if FLAGS.recursive:
-                full_file_n = os.path.join(directory,file_n)
+                full_file_n = os.path.join(directory, file_n)
                 # print(file_n)
             else:
-                full_file_n = os.path.join(root_folder,file_n)
+                full_file_n = os.path.join(root_folder, file_n)
             if file_n.endswith('fast5'):
                 try:
                     raw_signal, reference = extract_file(full_file_n)
@@ -66,36 +66,27 @@ def extract(FLAGS):
                     ref_file = open(os.path.join(ref_folder, os.path.splitext(file_n)[0] + '_ref.fasta'), 'w+')
                     ref_file.write(reference)
 
+
 def extract_file(input_file):
-    try:
-        input_data = h5py.File(input_file, 'r')
-    except IOError:
-        return False
-    except:
-        return False
-    raw_attr = input_data['Raw/Reads/']
-    read_name = list(raw_attr.keys())[0]
-    raw_signal = raw_attr[read_name + '/Signal'].value
-    try:
+    with h5py.File(input_file, 'r') as input_data:
+        for read_name in input_data['Raw/Reads']:
+            raw_signal = input_data['Raw/Reads'][read_name]['Signal'].value
         reference = input_data['Analyses/Basecall_1D_000/BaseCalled_template/Fastq'].value
-        reference = '>template\n' + reference.split('\n')[1]
-    except:
-        try:
-            reference = input_data['Analyses/Alignment_000/Aligned_template/Fasta'].value
-        except:
-            reference = ''
+    if type(reference) == bytes:
+        reference = reference.decode()
+    reference = '>template\n' + reference.split('\n')[1]
     return raw_signal, reference
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract the signal and reference from fast5 file.')
-    parser.add_argument('-i', 
-                        '--input_dir', 
-                        required = True,
+    parser.add_argument('-i',
+                        '--input_dir',
+                        required=True,
                         help="Directory that store the fast5 files.")
-    parser.add_argument('-o', 
-                        '--output_dir', 
-                        required = True,
+    parser.add_argument('-o',
+                        '--output_dir',
+                        required=True,
                         help="Directory that output the signal and reference sequence.")
     parser.add_argument('-r',
                         '--recursive',
