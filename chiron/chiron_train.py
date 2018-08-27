@@ -42,7 +42,7 @@ def train(hparam):
 
     Args:
         hparam: hyper parameter for training the neural network
-            data-dir: String, the path of the data(binary batch files) directory.
+            data_dir: String, the path of the data(binary batch files) directory.
             log-dir: String, the path to save the trained model.
             sequence-len: Int, length of input signal.
             batch-size: Int.
@@ -54,11 +54,15 @@ def train(hparam):
 
     """
     training = tf.placeholder(tf.bool)
-    global_step = tf.get_variable('global_step', trainable=False, shape=(),
+    global_step = tf.get_variable('global_step', 
+                                  trainable=False, 
+                                  shape=(),
                                   dtype=tf.int32,
                                   initializer=tf.zeros_initializer())
 
-    x, seq_length, train_labels = inputs(hparam.data_dir, hparam.batch_size,
+    x, seq_length, train_labels = inputs(hparam.data_dir, 
+                                         hparam.batch_size,
+                                         hparam.sequence_len,
                                          for_valid=False)
     y = dense2sparse(train_labels)
     default_config = os.path.join(hparam.log_dir,hparam.model_name,'model.json')
@@ -174,10 +178,10 @@ if __name__ == "__main__":
            default=1,
            type=int)
    parser.add_argument(
-           '-r',
-           '--retrain',
-           help='Flag if retrain the model',
-           default=False,
-           type=bool)
+            '--retrain', 
+            dest='retrain', 
+            action='store_true',
+            help='Set retrain to true')
+   parser.set_defaults(retrain=False)
    args = parser.parse_args()
    run(hparam.HParams(**args.__dict__)) 

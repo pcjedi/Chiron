@@ -23,8 +23,8 @@ def extract(FLAGS):
     if not os.path.isdir(root_folder):
         raise IOError('Input directory does not found.')
     if out_folder is None:
-        raw_folder = os.path.abspath(os.path.join(out_folder, os.pardir, 'raw'))
-        ref_folder = os.path.abspath(os.path.join(out_folder, os.pardir, 'reference'))
+        raw_folder = os.path.abspath(os.path.join(out_folder, 'raw'))
+        ref_folder = os.path.abspath(os.path.join(out_folder, 'reference'))
     else:
         if not os.path.isdir(FLAGS.output_dir):
             os.makedirs(FLAGS.output_dir)
@@ -52,7 +52,7 @@ def extract(FLAGS):
                 full_file_n = os.path.join(root_folder, file_n)
             if file_n.endswith('fast5'):
                 try:
-                    raw_signal, reference = extract_file(full_file_n)
+                    raw_signal, reference = extract_file(full_file_n,FLAGS.mode)
                     count += 1
                     if len(raw_signal) == 0:
                         raise ValueError("Failed in extracting " + (
@@ -66,11 +66,25 @@ def extract(FLAGS):
                     ref_file = open(os.path.join(ref_folder, os.path.splitext(file_n)[0] + '_ref.fasta'), 'w+')
                     ref_file.write(reference)
 
+<<<<<<< HEAD
 
 def extract_file(input_file):
     with h5py.File(input_file, 'r') as input_data:
         for read_name in input_data['Raw/Reads']:
             raw_signal = input_data['Raw/Reads'][read_name]['Signal'].value
+=======
+def extract_file(input_file,mode = 'dna'):
+    try:
+        input_data = h5py.File(input_file, 'r')
+    except IOError:
+        return False
+    except:
+        return False
+    raw_signal = list(input_data['/Raw/Reads'].values())[0]['Signal'].value
+    if mode == 'rna':
+        raw_signal = raw_signal[::-1]
+    try:
+>>>>>>> haomaster/master
         reference = input_data['Analyses/Basecall_1D_000/BaseCalled_template/Fastq'].value
     if type(reference) == bytes:
         reference = reference.decode()
@@ -92,5 +106,9 @@ if __name__ == '__main__':
                         '--recursive',
                         action='store_true',
                         help="If recursively search subfolder")
+    parser.add_argument('-m',
+                        '--mode',
+                        default = 'rna',
+                        help="Output mode, can be chosen from dna or rna.")
     args = parser.parse_args(sys.argv[1:])
     extract(args)

@@ -19,9 +19,15 @@ import labelop
 
 DNA_BASE = {'A': 0, 'C': 1, 'G': 2, 'T': 3, }
 DNA_IDX = ['A', 'C', 'G', 'T']
-
+MINIMUM_LABEL_LEN = 5
 
 def extract():
+    if FLAGS.mode == 'rna':
+        MINIMUM_SIGNAL_LEN = MINIMUM_LABEL_LEN * 7
+    elif FLAGS.mode == 'dna':
+        MINIMUM_SIGNAL_LEN = MINIMUM_LABEL_LEN + 1
+    else:
+        raise ValueError("mode must be either dna or rna.")
     root_folder = FLAGS.input + os.path.sep
     output_folder = FLAGS.output + os.path.sep
     if not os.path.isdir(root_folder):
@@ -67,15 +73,16 @@ def extract():
         pre_start = raw_start[0]
         pre_index = 0
         for index, start in enumerate(raw_start):
-            if start - pre_start > FLAGS.length:
-                if index - 1 == pre_index:
+            while (start - pre_start > FLAGS.length):
+                current_len = int(raw_start[index - 1] - pre_start)
+                if (index - 1 - MINIMUM_LABEL_LEN <= pre_index) or (current_len < MINIMUM_SIGNAL_LEN):
                     # If a single segment is longer than the maximum singal length, skip it.
-                    pre_start = start
-                    pre_index = index
+                    pre_index +=1
+                    pre_start = raw_start[pre_index]
                     continue
                 event.append(np.pad(raw_data[pre_start:raw_start[index - 1]],
                                     (0, FLAGS.length + pre_start - raw_start[index - 1]), mode='constant'))
-                event_length.append(int(raw_start[index - 1] - pre_start))
+                event_length.append(current_len)
                 label_ind = raw_label['base'][pre_index:(index - 1)]
                 temp_label = [DNA_BASE[x.decode('UTF-8')] for x in label_ind]
                 label.append(
@@ -100,11 +107,12 @@ def extract():
             return True
         return False
 
-    for file_n in os.listdir(root_folder):
+    for base_dir, _ ,file_list in os.walk(root_folder):
+     for file_n in file_list:
         if file_n.endswith('fast5'):
             if output_file is None:
-                output_file = open(output_folder + os.path.sep + "data_batch_" + str(batch_idx) + '.bin', 'wb+')
-            output_state = extract_fast5(root_folder + os.path.sep + file_n, output_file)
+                output_file = open(os.path.join(output_folder,"data_batch_" + str(batch_idx) + '.bin'), 'wb+')
+            output_state = extract_fast5(os.path.join(base_dir,file_n), output_file)
             if output_state:
                 batch_idx += 1
                 output_file.close()
@@ -146,11 +154,11 @@ if __name__ == "__main__":
                         help='Basecall group Nanoraw resquiggle into. Default is Basecall_1D_000')
     parser.add_argument('--basecall_subgroup', default='BaseCalled_template',
                         help='Basecall subgroup Nanoraw resquiggle into. Default is BaseCalled_template')
-    parser.add_argument('-l', '--length', default=512, help="Length of the signal segment")
-    parser.add_argument('-b', '--batch', default=10000, help="Number of record in one file.")
+    parser.add_argument('-l', '--length',type=int, default=512, help="Length of the signal segment")
+    parser.add_argument('-b', '--batch',type=int, default=10000, help="Number of record in one file.")
     parser.add_argument('-n', '--normalization', default='median',
                         help="The method of normalization applied to signal, Median(default):robust median normalization, 'mean': mean normalization, 'None': no normalizaion")
-    parser.add_argument('-m', '--max', default=10, help="Maximum number of batch files generated.")
-    parser.add_argument('--mode', default='dna', help="Sequecing data type. Default is DNA.")
+    parser.add_argument('-m', '--max',type=int, default=10, help="Maximum number of batch files generated.")
+    parser.add_argument('--mode', default='dna', help="Sequecing data type. Default is DNA.Can be rna or dna")
     args = parser.parse_args(sys.argv[1:])
     run(args)
