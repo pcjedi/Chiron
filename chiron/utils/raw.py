@@ -37,23 +37,13 @@ def extract(raw_folder=None):
 
     writer = tf.python_io.TFRecordWriter(tfrecords_filename)
 
-<<<<<<< HEAD
     n_all = 0
     n_success = 0
     for file_n in tf.gfile.ListDirectory(root_folder):
         if file_n.endswith('fast5'):
             n_all += 1
-            #output_file = output_folder + os.path.splitext(file_n)[0]
             success, (raw_data, raw_data_array) = extract_file(
                 root_folder + os.path.sep + file_n)
-=======
-    for dir_n,_,file_list in tf.gfile.Walk(root_folder):
-     for file_n in file_list:
-        if file_n.endswith('fast5'):
-#            output_file = output_folder + os.path.splitext(file_n)[0]
-            file_n = os.path.join(dir_n,file_n)
-            success, (raw_data, raw_data_array) = extract_file(file_n)
->>>>>>> haomaster/master
             if success:
                 n_success += 1
                 example = tf.train.Example(features=tf.train.Features(feature={
@@ -61,15 +51,8 @@ def extract(raw_folder=None):
                     'features': _bytes_feature(raw_data_array.tostring()),
                     'fname':_bytes_feature(str.encode(file_n))}))
                 writer.write(example.SerializeToString())
-<<<<<<< HEAD
                 print ("%s file transfered." % (file_n))
     print ('Extraction finnished: {} of {} Files succeeded'.format(n_success, n_all))
-=======
-                sys.stdout.write("%s file transfered.   \n" % (file_n))
-            else:
-                sys.stdout.write("FAIL on %s file.   \n" % (file_n))
-
->>>>>>> haomaster/master
     writer.close()
 
 
@@ -78,13 +61,8 @@ def extract_file(input_file):
     	(raw_data, raw_label, raw_start, raw_length) = labelop.get_label_raw(
             input_file, FLAGS.basecall_group,
             FLAGS.basecall_subgroup)
-<<<<<<< HEAD
     except IOError as e:
         print (e, input_file)
-=======
-    except Exception as e:
-        print(str(e))
->>>>>>> haomaster/master
         return False, (None, None)
 
     raw_data_array = []
